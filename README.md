@@ -58,8 +58,9 @@
 
 ## 内置语音提示
 
-- 构建时由 GitHub Actions 用 `espeak-ng` 合成 `app/src/main/res/raw/drive_warning.wav`，打包进 APK，运行时用 MediaPlayer 播放，**不依赖车机是否装了中文 TTS 引擎**。
-- 想换成更好听的人声：把任意 `mp3/wav` 命名为 `drive_warning.mp3` 放进 `app/src/main/res/raw/`，构建脚本检测到文件存在就会跳过自动生成。
+- 提示音就是 `app/src/main/res/raw/drive_warning.mp3`，直接打包进 APK，运行时用 MediaPlayer 播放，**不依赖车机是否装了中文 TTS 引擎**。
+- 想换声音：替换这个文件即可（`drive_warning.mp3` / `.wav` 都行）；文件不存在时构建脚本会用 espeak-ng 自动生成一段。
+- 退出后台时释放音频焦点，并补发一个媒体「播放」键，让被暂停的音乐/电台续播。
 - 菜单 → 驾驶 → 「语音提醒」可随时关闭（关闭后仍会暂停音乐，只是不播报）。
 - 若构建环境装不上 espeak-ng，APK 会自动退回系统 TTS 播报，功能不受影响。
 

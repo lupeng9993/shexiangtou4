@@ -999,7 +999,7 @@ class MainActivity : Activity(), CameraCore.Listener {
     private fun showAbout() {
         val voiceMode = if (DrivePlayer.hasBuiltin(this)) "内置语音" else "系统 TTS"
         AlertDialog.Builder(this)
-            .setTitle("USB 摄像头 v2.1")
+            .setTitle("USB 摄像头 v2.2")
             .setMessage(
                 "基于 libuvc（UVCAndroid）的免驱 USB 摄像头应用。\n\n" +
                     "· 全屏预览，轻点屏幕唤出控件\n" +

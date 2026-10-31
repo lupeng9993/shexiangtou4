@@ -4,8 +4,11 @@ import android.content.Context
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import android.view.KeyEvent
 import java.util.Locale
 
 /**
@@ -27,6 +30,11 @@ object DrivingAudio {
 
     private val focusListener = AudioManager.OnAudioFocusChangeListener { }
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    /** 进入前音乐是否在播放：决定退出时要不要替用户补一个“播放”媒体键。 */
+    private var pausedMusic = false
+
     fun enter(context: Context, speak: Boolean) {
         val app = context.applicationContext
         requestFocus(app)
@@ -39,7 +47,14 @@ object DrivingAudio {
 
     fun exit(context: Context) {
         DrivePlayer.release()
+        val shouldResume = hasFocus && pausedMusic
         abandonFocus()
+        pausedMusic = false
+
+        if (shouldResume) {
+            // 有的车机播放器被抢焦点后不会自己续播，这里延迟补一个媒体“播放”键。
+            mainHandler.postDelayed({ sendMediaPlay(context.applicationContext) }, 500)
+        }
     }
 
     // ------------------------------------------------------------------
@@ -50,6 +65,11 @@ object DrivingAudio {
         if (hasFocus) return
         val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
         audioManager = am
+        pausedMusic = try {
+            am.isMusicActive
+        } catch (e: Exception) {
+            false
+        }
 
         val result: Int
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -85,6 +105,18 @@ object DrivingAudio {
     @Suppress("DEPRECATION")
     private fun abandonFocusLegacy(am: AudioManager) {
         am.abandonAudioFocus(focusListener)
+    }
+
+    /** 通知系统媒体播放：部分播放器被抢焦点后不会自动续播。 */
+    @Suppress("DEPRECATION")
+    private fun sendMediaPlay(context: Context) {
+        val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+        try {
+            am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY))
+            am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY))
+        } catch (e: Exception) {
+            Log.e(TAG, "resume media failed", e)
+        }
     }
 
     // ------------------------------------------------------------------
